@@ -2,23 +2,22 @@ package datasources
 
 import (
 	"database/sql"
+	"log"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
-var DB *sql.DB
-
-func InitDB(dsn string) error {
+func InitDB(dsn string) *sql.DB {
 	var err error
-	DB, err = sql.Open("mysql", dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	err = DB.Ping()
+	err = db.Ping()
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 
-	return nil
+	return db
 }
