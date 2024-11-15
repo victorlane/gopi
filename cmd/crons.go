@@ -16,7 +16,7 @@ func RunCrons(duck *sql.DB, mysql *sql.DB) {
 		log.Fatal(err)
 	}
 
-	j, err := scheduler.NewJob(
+	_, err = scheduler.NewJob(
 		gocron.DailyJob(
 			1,
 			gocron.NewAtTimes(
@@ -28,7 +28,7 @@ func RunCrons(duck *sql.DB, mysql *sql.DB) {
 				query := fmt.Sprintf(`INSERT INTO mysql_db.logs
 					SELECT client_ip, timestamp, method, path, protocol,
 					status_code, latency, user_agent, created_at
-					FROM gopi.logs WHERE timestamp > %s;
+					FROM gopi.logs WHERE timestamp < %s;
 				`, strconv.FormatInt(time.Now().Unix(), 10))
 				_, err = duck.Exec(query)
 
@@ -41,10 +41,9 @@ func RunCrons(duck *sql.DB, mysql *sql.DB) {
 			1,
 		),
 	)
+
 	if err != nil {
-		// handle error
 	}
 
-	fmt.Println(j)
 	go scheduler.Start()
 }

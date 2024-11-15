@@ -20,15 +20,25 @@ import (
 var multiplier = 8
 var cacheOpts = cache.WithPrefixKey("gopi")
 
+func handlerMiddleWare(authMiddleware *jwt.GinJWTMiddleware) gin.HandlerFunc {
+	return func(context *gin.Context) {
+		errInit := authMiddleware.MiddlewareInit()
+		if errInit != nil {
+			log.Fatal("authMiddleware.MiddlewareInit() Error:" + errInit.Error())
+		}
+	}
+}
+
 func Init(redis *redis.Client, mysql *sql.DB, s3 *ds.S3Client, duck *sql.DB, jwtSecret *string) {
 	// Set production mode
 	// gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	authMiddleware, err := jwt.New(initAuthParams(*jwtSecret))
-	fmt.Println(authMiddleware)
 	if err != nil {
 		log.Fatal("JWT Error:" + err.Error())
 	}
+
+	router.Use(handlerMiddleWare(authMiddleware))
 
 	router.Use(func(c *gin.Context) {
 		start := time.Now()
@@ -57,6 +67,20 @@ func Init(redis *redis.Client, mysql *sql.DB, s3 *ds.S3Client, duck *sql.DB, jwt
 		})
 	}
 
+	protected := router.Group("/private")
+	{
+		protected.GET("/profile", func(c *gin.Context) {
+			claims := jwt.ExtractClaims(c)
+			user, _ := c.Get(authMiddleware.IdentityKey)
+			c.JSON(http.StatusOK, gin.H{
+				"userID": claims[idKey],
+				"user":   user,
+			})
+		})
+	}
+
+	router.POST("/login", authMiddleware.LoginHandler)
+	router.GET("/refresh_token", authMiddleware.RefreshHandler)
 	router.NoRoute(gin.WrapH(http.FileServer(http.Dir("public"))))
 
 	router.Run()

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"gopi/models"
 	"os"
 	"time"
 
@@ -9,17 +10,6 @@ import (
 )
 
 var idKey = os.Getenv("JWT_IDENTITY_KEY")
-
-type User struct {
-	UserName  string
-	FirstName string
-	LastName  string
-}
-
-type login struct {
-	Username string `form:"username" json:"username" binding:"required"`
-	Password string `form:"password" json:"password" binding:"required"`
-}
 
 func initAuthParams(secretKey string) *jwt.GinJWTMiddleware {
 
@@ -36,16 +26,14 @@ func initAuthParams(secretKey string) *jwt.GinJWTMiddleware {
 		Authorizator:    authorizator(),
 		Unauthorized:    unauthorized(),
 		TokenLookup:     "header: Authorization, query: token, cookie: jwt",
-		// TokenLookup: "query:token",
-		// TokenLookup: "cookie:token",
-		TokenHeadName: "Bearer",
-		TimeFunc:      time.Now,
+		TokenHeadName:   "Bearer",
+		TimeFunc:        time.Now,
 	}
 }
 
 func authenticator() func(c *gin.Context) (interface{}, error) {
 	return func(c *gin.Context) (interface{}, error) {
-		var loginVals login
+		var loginVals models.Login
 		if err := c.ShouldBind(&loginVals); err != nil {
 			return "", jwt.ErrMissingLoginValues
 		}
@@ -53,7 +41,7 @@ func authenticator() func(c *gin.Context) (interface{}, error) {
 		password := loginVals.Password
 
 		if (userID == "admin" && password == "admin") || (userID == "test" && password == "test") {
-			return &User{
+			return &models.User{
 				UserName:  userID,
 				LastName:  "Bo-Yi",
 				FirstName: "Wu",
@@ -65,7 +53,7 @@ func authenticator() func(c *gin.Context) (interface{}, error) {
 
 func authorizator() func(data interface{}, c *gin.Context) bool {
 	return func(data interface{}, c *gin.Context) bool {
-		if v, ok := data.(*User); ok && v.UserName == "admin" {
+		if v, ok := data.(*models.User); ok && v.UserName == "admin" {
 			return true
 		}
 		return false
@@ -83,7 +71,7 @@ func unauthorized() func(c *gin.Context, code int, message string) {
 
 func payloadFunc() func(data interface{}) jwt.MapClaims {
 	return func(data interface{}) jwt.MapClaims {
-		if v, ok := data.(*User); ok {
+		if v, ok := data.(*models.User); ok {
 			return jwt.MapClaims{
 				idKey: v.UserName,
 			}
@@ -95,7 +83,7 @@ func payloadFunc() func(data interface{}) jwt.MapClaims {
 func identityHandler() func(c *gin.Context) interface{} {
 	return func(c *gin.Context) interface{} {
 		claims := jwt.ExtractClaims(c)
-		return &User{
+		return &models.User{
 			UserName: claims[idKey].(string),
 		}
 	}

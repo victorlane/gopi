@@ -9,9 +9,7 @@ import (
 	_ "github.com/marcboeker/go-duckdb"
 )
 
-func InitDuckDB(mysql *config.Credentials) {
-	db := GetDuckDB()
-
+func InitDuckDB(mysql *config.Credentials, db *sql.DB) {
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS logs (
 		client_ip TEXT,
 		timestamp TIMESTAMP,
