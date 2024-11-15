@@ -8,9 +8,9 @@ const (
 )
 
 type User struct {
-	UserName  string
-	FirstName string
-	LastName  string
+	Id       int
+	Username string
+	Role     uint8
 }
 
 type Login struct {

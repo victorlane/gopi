@@ -41,11 +41,7 @@ func authenticator() func(c *gin.Context) (interface{}, error) {
 		password := loginVals.Password
 
 		if (userID == "admin" && password == "admin") || (userID == "test" && password == "test") {
-			return &models.User{
-				UserName:  userID,
-				LastName:  "Bo-Yi",
-				FirstName: "Wu",
-			}, nil
+			return &models.User{}, nil
 		}
 		return nil, jwt.ErrFailedAuthentication
 	}
@@ -53,7 +49,7 @@ func authenticator() func(c *gin.Context) (interface{}, error) {
 
 func authorizator() func(data interface{}, c *gin.Context) bool {
 	return func(data interface{}, c *gin.Context) bool {
-		if v, ok := data.(*models.User); ok && v.UserName == "admin" {
+		if v, ok := data.(*models.User); ok && v.Username == "admin" {
 			return true
 		}
 		return false
@@ -73,7 +69,7 @@ func payloadFunc() func(data interface{}) jwt.MapClaims {
 	return func(data interface{}) jwt.MapClaims {
 		if v, ok := data.(*models.User); ok {
 			return jwt.MapClaims{
-				idKey: v.UserName,
+				idKey: v.Username,
 			}
 		}
 		return jwt.MapClaims{}
@@ -84,7 +80,7 @@ func identityHandler() func(c *gin.Context) interface{} {
 	return func(c *gin.Context) interface{} {
 		claims := jwt.ExtractClaims(c)
 		return &models.User{
-			UserName: claims[idKey].(string),
+			Username: claims[idKey].(string),
 		}
 	}
 }
