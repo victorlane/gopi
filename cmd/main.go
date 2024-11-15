@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"gopi/api"
 	"gopi/config"
 	ds "gopi/datasources"
@@ -11,13 +10,11 @@ import (
 
 func main() {
 	config := config.GetConfig()
-	ds.InitDuckDB() // Create DuckDB
 	os.Setenv("PORT", config.HttpPort)
 
-	db := ds.InitDB(fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", config.DbUser, config.DbPassword,
-		config.DbHost, config.DbPort, config.DbName))
+	ds.InitDuckDB(config.Db)
+	db := ds.InitDB(config.Db)
 	redis := ds.InitRedis(config.RedisPassword, config.RedisHost, config.RedisPort, 8)
-
 	s3, err := ds.NewS3ClientWithCredentials(config.S3AcessKeyID, config.S3SecretKey, config.S3Region, config.S3Arn)
 
 	if err != nil {
@@ -26,5 +23,7 @@ func main() {
 
 	duck := ds.GetDuckDB()
 
-	api.Init(redis, db, s3, duck)
+	RunCrons(duck, db)
+
+	api.Init(redis, db, s3, duck, &config.JWTSecretKey)
 }

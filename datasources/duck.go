@@ -3,26 +3,58 @@ package datasources
 import (
 	"database/sql"
 	"fmt"
+	"gopi/config"
 	"log"
 
 	_ "github.com/marcboeker/go-duckdb"
 )
 
-func InitDuckDB() {
+func InitDuckDB(mysql *config.Credentials) {
 	db := GetDuckDB()
 
 	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS logs (
+		client_ip TEXT,
+		timestamp TIMESTAMP,
+		method TEXT,
+		path TEXT,
+		protocol TEXT,
+		status_code INTEGER,
+		latency TEXT,
+		user_agent TEXT,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	);`)
+
+	if err != nil {
+		fmt.Printf("Error creating logs table: %v\n", err)
+		return
+	}
+
+	query := fmt.Sprintf(`INSTALL mysql; LOAD mysql; CREATE SECRET (
+		TYPE MYSQL,
+		HOST '%s',
+		PORT %s,
+		DATABASE %s,
+		USER '%s',
+		PASSWORD '%s'
+	); ATTACH '' AS mysql_db (TYPE MYSQL);`, mysql.DbHost, mysql.DbPort, mysql.DbName, mysql.DbUser, mysql.DbPassword)
+
+	_, err = db.Exec(query)
+	if err != nil {
+		fmt.Printf("Error creating logs table: %v\n", err)
+		return
+	}
+
+	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS mysql_db.logs (
 			client_ip TEXT,
-			time_stamp TIMESTAMP,
+			timestamp TIMESTAMP,
 			method TEXT,
 			path TEXT,
 			protocol TEXT,
 			status_code INTEGER,
 			latency TEXT,
 			user_agent TEXT,
-			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-			updated_at TIMESTAMP
-	)`)
+			created_at TIMESTAMP,
+	);`)
 
 	if err != nil {
 		fmt.Printf("Error creating logs table: %v\n", err)
