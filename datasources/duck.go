@@ -5,58 +5,80 @@ import (
 	"fmt"
 	"gopi/config"
 	"log"
+	"strings"
 
 	_ "github.com/marcboeker/go-duckdb"
+	"github.com/qustavo/dotsql"
 )
 
-func InitDuckDB(mysql *config.Credentials, db *sql.DB) {
-	_, err := db.Exec(`CREATE TABLE IF NOT EXISTS logs (
-		client_ip TEXT,
-		timestamp TIMESTAMP,
-		method TEXT,
-		path TEXT,
-		protocol TEXT,
-		status_code INTEGER,
-		latency TEXT,
-		user_agent TEXT,
-		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	);`)
+func IsInitialized(db *sql.DB) bool {
+	row := db.QueryRow(`
+        SELECT config
+        FROM settings
+        WHERE id = 'app'
+    `)
 
+	var configJSON string
+	err := row.Scan(&configJSON)
 	if err != nil {
-		fmt.Printf("Error creating logs table: %v\n", err)
-		return
+		if err == sql.ErrNoRows {
+			return false
+		} else {
+			log.Printf("Error querying 'settings' table: %v", err)
+			return false
+		}
 	}
 
-	query := fmt.Sprintf(`INSTALL mysql; LOAD mysql; CREATE SECRET (
-		TYPE MYSQL,
-		HOST '%s',
-		PORT %s,
-		DATABASE %s,
-		USER '%s',
-		PASSWORD '%s'
-	); ATTACH '' AS mysql_db (TYPE MYSQL);`, mysql.DbHost, mysql.DbPort, mysql.DbName, mysql.DbUser, mysql.DbPassword)
+	return strings.Contains(configJSON, `"database_initialized": true`)
+}
+
+func InitDuckDB(mysql *config.Credentials, db *sql.DB) {
+	dot, err := dotsql.LoadFromFile("datasources/sql/duckdb-init.sql")
+	if err != nil {
+		log.Fatal("Failed to open duckdb-init.sql")
+	}
+
+	_, err = dot.Exec(db, "duckdb-tables")
+	if err != nil {
+		fmt.Print(err)
+		log.Fatal("Failedd to initialize duckdb")
+	}
+
+	query := fmt.Sprintf(`
+        INSTALL mysql;
+        LOAD mysql;
+        CREATE SECRET (
+            TYPE MYSQL,
+            HOST '%s',
+            PORT '%s',
+            DATABASE '%s',
+            USER '%s',
+            PASSWORD '%s'
+        );
+        ATTACH '' AS mysql_db (TYPE MYSQL);
+    `,
+		mysql.DbHost,
+		mysql.DbPort,
+		mysql.DbName,
+		mysql.DbUser,
+		mysql.DbPassword,
+	)
 
 	_, err = db.Exec(query)
 	if err != nil {
-		fmt.Printf("Error creating logs table: %v\n", err)
-		return
+		log.Fatalf("Failed to execute query: %v", err)
 	}
 
-	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS mysql_db.logs (
-			client_ip TEXT,
-			timestamp TIMESTAMP,
-			method TEXT,
-			path TEXT,
-			protocol TEXT,
-			status_code INTEGER,
-			latency TEXT,
-			user_agent TEXT,
-			created_at TIMESTAMP,
-	);`)
-
+	_, err = dot.Exec(db, "mysql-table")
 	if err != nil {
-		fmt.Printf("Error creating logs table: %v\n", err)
-		return
+		fmt.Print(err)
+		log.Fatal("Failed to create mysql table on attached instance")
+	}
+
+	_, err = dot.Exec(db, "finish-init")
+	if err != nil {
+		fmt.Print(err)
+		log.Fatal("Failed to finish database initialization")
 	}
 }
 

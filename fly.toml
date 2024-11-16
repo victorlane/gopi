@@ -20,3 +20,14 @@ primary_region = 'ams'
   memory = '1gb'
   cpu_kind = 'shared'
   cpus = 1
+
+[env]
+  DB_PORT = "3306"
+  DB_NAME = "gopi"
+  DB_USER = "gopi"
+  HTTP_PORT ="9000"
+  S3_ENDPOINT = "https://gbackend.s3.eu-west-1.amazonaws.com/"
+  S3_BUCKET_NAME = "gbackend"
+  S3_REGION = "eu-west-1"
+  S3_ARN = "arn:aws:iam::730335305795:user/gopi"
+  REDIS_PORT = "6379"

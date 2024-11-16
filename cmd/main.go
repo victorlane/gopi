@@ -8,15 +8,13 @@ import (
 	"os"
 )
 
-var initialize bool = false
-
 func main() {
 	config := config.GetConfig()
 	os.Setenv("PORT", config.HttpPort)
 	db := ds.GetDB(config.Db)
 	duck := ds.GetDuckDB()
 
-	if initialize {
+	if !ds.IsInitialized(duck) {
 		ds.InitDB(db)
 		ds.InitDuckDB(config.Db, duck)
 	}
