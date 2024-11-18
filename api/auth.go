@@ -11,7 +11,7 @@ import (
 
 var idKey = os.Getenv("JWT_IDENTITY_KEY")
 
-func initAuthParams(secretKey string) *jwt.GinJWTMiddleware {
+func InitAuthParams(secretKey string) *jwt.GinJWTMiddleware {
 
 	return &jwt.GinJWTMiddleware{
 		Realm:       "gopi",

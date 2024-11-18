@@ -1,3 +1,4 @@
 # TODO
 
-Add .env variables for github ci/cd to fly.io
+Add MySQL initialization via dotsql & .sql file
+Implement authentication for JWT

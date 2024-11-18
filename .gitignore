@@ -1,1 +1,5 @@
 .env
+gopi.db
+node_modules/
+pnpm-lock.yaml
+trigger.config.ts

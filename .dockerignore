@@ -1,3 +1,4 @@
 .gitignore
 .github/
 .git/
+node_modules/

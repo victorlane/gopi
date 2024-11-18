@@ -21,12 +21,8 @@ func IsInitialized(db *sql.DB) bool {
 	var configJSON string
 	err := row.Scan(&configJSON)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return false
-		} else {
-			log.Printf("Error querying 'settings' table: %v", err)
-			return false
-		}
+		// add better checks if the error is err == sql.ErrNoRows or table doesn't exist VS unexpected error
+		return false
 	}
 
 	return strings.Contains(configJSON, `"database_initialized": true`)

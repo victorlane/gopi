@@ -21,6 +21,10 @@ primary_region = 'ams'
   cpu_kind = 'shared'
   cpus = 1
 
+[mounts]
+  source = "vol_453q3z273qpzjj1r"
+  destination = "/data"
+
 [env]
   DB_PORT = "3306"
   DB_NAME = "gopi"

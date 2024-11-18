@@ -33,7 +33,7 @@ func Init(redis *redis.Client, mysql *sql.DB, s3 *ds.S3Client, duck *sql.DB, jwt
 	// Set production mode
 	// gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
-	authMiddleware, err := jwt.New(initAuthParams(*jwtSecret))
+	authMiddleware, err := jwt.New(InitAuthParams(*jwtSecret))
 	if err != nil {
 		log.Fatal("JWT Error:" + err.Error())
 	}
